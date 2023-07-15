@@ -1,1 +1,1 @@
-# MuJoCo-quadrotorSimulator
+# DiplomskiKod

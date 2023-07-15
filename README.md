@@ -1,9 +1,9 @@
 # DiplomskiKod
 
 # Requirements 
-MuJoCo binaries - it can be installed from this link https://github.com/deepmind/mujoco
-GLFW library - it can be installed from this link https://www.glfw.org/docs/latest/index.html (version 3.3)
-x64 Native Tools Command Prompt for VS 2022
+- MuJoCo binaries - it can be installed from this link https://github.com/deepmind/mujoco
+- GLFW library - it can be installed from this link https://www.glfw.org/docs/latest/index.html (version 3.3)
+- x64 Native Tools Command Prompt for VS 2022
 
 # How to include GLFW library in MuJoCo 
 - Paste glfw3dll.lib inside MuJoCo lib folder

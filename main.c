@@ -1,5 +1,3 @@
-
-
 #include<stdbool.h> //for bool
 //#include<unistd.h> //for usleep
 
@@ -11,7 +9,7 @@
 #include "string.h"
 
 //simulation end time
-double simend = 10;
+double simend = 11;
 
 #define ndof 6
 #define na 4
@@ -132,23 +130,25 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 void init_save_data()
 {
   //write name of the variable here (header)
-   fprintf(fid,"t, ");
-   fprintf(fid,"PE, KE, TE, ");
-   fprintf(fid,"q1, q2, ");
-
+  // fprintf(fid,"t, ");
+ //  fprintf(fid,"T_x, T_y, T_z, ");
+   fprintf(fid,"f_ax, f_ay, f_az, ");
+   fprintf(fid,"v_x, v_y, v_z, ");
    //Don't remove the newline
    fprintf(fid,"\n");
 }
 
 //***************************
 //This function is called at a set frequency, put data here
-void save_data(const mjModel* m, mjData* d)
+void save_data(const mjModel* m, mjData* d, double acc_vec[])
 {
   //data here should correspond to headers in init_save_data()
   //seperate data by a space %f followed by space
   fprintf(fid,"%f, ",d->time);
-  fprintf(fid,"%f, %f, %f, ",d->energy[0],d->energy[1],d->energy[0]+d->energy[1]);
-  fprintf(fid,"%f, %f ",d->qpos[0],d->qpos[1]);
+  fprintf(fid,"%f, %f, %f, ",d->qacc[0],d->qacc[1],d->qacc[2]);
+  fprintf(fid,"%f, %f, %f, ",acc_vec[0],acc_vec[1], acc_vec[2]);
+  fprintf(fid,"%f, %f, %f ",d->qvel[0],d->qvel[1], d->qvel[2]);
+ // fprintf(fid,"%f, %f, %f ",torque_vec[0], torque_vec[1], torque_vec[2]);
   //Don't remove the newline
   fprintf(fid,"\n");
 }
@@ -178,6 +178,20 @@ void computeMassMatrix(const mjModel* m, mjData* d, double M[ndof][ndof]){
 }
 
 //**************************
+
+// Model aktuatora kao sistema prvog reda
+ void actuatorModel(const mjModel* m, mjData* d, double* ctr){
+ int i=0; 
+ double tau[na] = {1,1,1,1}, ctrl_0[na]={0}, h=0.01; 
+ for(i=0;i<na;i++){
+  ctrl_0[i] = d->ctrl[i]; 
+ }
+ for(i=0; i<na;i++){
+   d->ctrl[i] = (h/tau[i])*(ctr[i]-ctrl_0[i])+ctrl_0[i];
+   // d->ctrl[i] = ctr[i];
+ }
+}
+
 //***************************
 // Jednacina: T = J*w_dot+ (w)x(J*w) 
 void torqueVector(const mjModel* m, mjData* d, double* T){
@@ -196,7 +210,6 @@ void torqueVector(const mjModel* m, mjData* d, double* T){
     w_dot[i] = d->qacc[i+3]; // ugaona ubrzanja
     w[i] = d->qvel[i+3]; // ugaone brzine
   } 
- 
   mju_mulMatVec(res1, J, w_dot, 3, 3); // clan J*w_dot
   mju_mulMatVec(res2, J, w, 3, 3); // clan J*w
   crossProduct(w, res2,cross_P);
@@ -206,23 +219,6 @@ void torqueVector(const mjModel* m, mjData* d, double* T){
 }
 //***************************
 
-//****************************
-// Model aktuatora kao sistema prvog reda
- void actuatorModel(const mjModel* m, mjData* d, double* ctr){
- int i=0; 
- double tau[na] = {1,1,1,1}, ctrl_0[na]={0}, h=0.01; 
- for(i=0;i<na;i++){
-  ctrl_0[i] = d->ctrl[i]; 
- }
- for(i=0; i<na;i++){
- //d->act[i] = ctr[i]-tau[i]*d->act_dot[i];
- //d->ctrl[i] = ctr[i]*(1-exp(-d->time/tau[i]));
-  d->ctrl[i] = (h/tau[i])*(ctr[i]-ctrl_0[i])+ctrl_0[i];
- // printf("%f ", d->ctrl[i]);
- }
-// printf("\n");
-// printf("******\n"); 
-}
 //****************************
 // Funkcija za odredjivanje Eulerovih uglova iz Quaterniona koji je dostupan kroz mjData.qpos
   void ToEulerAngles(const mjModel* m, mjData* d, double eulerAngles[]) {
@@ -249,8 +245,8 @@ void torqueVector(const mjModel* m, mjData* d, double* T){
 
 //****************************
 //****************************
-// Jednacina translacije: qddot_world = (1/md)*Rot*Force + g_vec
- void calculateTranslation(const mjModel* m, mjData* d, double acc_vec[]){
+// Jednacina translacije: qddot_world = (1/md)*Rot*Force + g_vec + D(v) 
+ void calculateTranslation(const mjModel* m, mjData* d, double acc_vec[], double ctr[]){
  double eulerAngles[3] = {0};
  ToEulerAngles(m, d,eulerAngles);
  double alpha = eulerAngles[0], beta = eulerAngles[1], gama = eulerAngles[2]; 
@@ -272,7 +268,8 @@ for(i=0; i<9;i++){
   rot[i] = rot[i]/md; 
 }
 // model sile propelera 
-double Fm = 1, F; 
+double Fm = 1, F, c=-0.3105; 
+actuatorModel(m,d,ctr); 
 F = Fm*(d->ctrl[0]+d->ctrl[1]+d->ctrl[2]+d->ctrl[3]); 
 // vektor sile 
 double force[3] = {0, 0, F};
@@ -281,7 +278,7 @@ double g_vec[3] = {0, 0, -9.81};
 double res[3]= {0}; 
 mju_mulMatVec(res, rot, force, 3, 3); // clan 1/md*R*force
 for(i=0; i<3;i++){
- acc_vec[i] = res[i] + g_vec[i];
+ acc_vec[i] = res[i] + g_vec[i]; //+ c*d->qvel[i];
 }
 
 }
@@ -292,48 +289,37 @@ void mycontroller(const mjModel* m, mjData* d)
   //write control here
   mj_energyPos(m,d);
   mj_energyVel(m,d);
-  //printf("%f %f %f %f \n",d->time,d->energy[0],d->energy[1],d->energy[0]+d->energy[1]);
-
-  double qddot[ndof]={0};
-  qddot[0]=d->qacc[0];  // ubrzanje pozicije
-  qddot[1]=d->qacc[1];
-  qddot[2]=d->qacc[2];
-  qddot[3]=d->qacc[3];  // ugaono ubrzanje 
-  qddot[4]=d->qacc[4];
-  qddot[5]=d->qacc[5];
-  double T[3] = {0}; 
- torqueVector( m, d, T);
-  int i; 
- // for(i=0; i<3; i++) 
- // {
- //   printf("%f ", qddot[i]);
-  //} 
-  //printf("\n");
- // printf("******\n"); 
- // printf("%f %f %f %f %f %f %f \n", d->qpos[0],d->qpos[1] ,d->qpos[2], d->qpos[3], d->qpos[4], d->qpos[5], d->qpos[6]);
- // printf("******\n"); 
-// ukupna sika  
-//   double F, Fm = 100;
-//   F = (d->ctrl[0] + d->ctrl[1] + d->ctlr[2] + d->ctrl[3])*Fm; 
-  double crt = 0.72970, act_old=0, act_new=0;
- double timestep = 1.0/60.0, tau = 2.7; 
- act_new = crt*(1-exp(-d->time/tau)); 
- d->ctrl[0] = crt; 
- d->ctrl[1] = crt; 
- d->ctrl[2] = crt; 
-  d->ctrl[3] = crt;
-  act_old = act_new; 
-  double ctr[na] = {0.75, 0.75, 0.75, 0.75};
-  double acc_vec[3] = {0}; 
-  calculateTranslation(m,d,acc_vec);  
-  printf("%f %f %f %f\n", acc_vec[0],  acc_vec[1] , acc_vec[2], d->qacc[2]);
-  printf("******\n"); 
- // actuatorModel(m,d,ctr);
+  char scenario = 1; 
+  double ctr[na] = {0}; double ctr_init = 0.95;
+  double acc_vec[3] = {0};
+  double torque_vec[3] = {0};  
+  if(scenario == 1)
+   {
+  if(d->time>0 && d->time<3){
+    ctr[0] = ctr_init; ctr[1] = ctr_init; ctr[2] = ctr_init; ctr[3] = ctr_init;
+    actuatorModel(m,d,ctr); 
+  //  torqueVector( m, d, torque_vec);
+    calculateTranslation(m,d,acc_vec,ctr); 
+   // printf("%f %f %f \n",d->qacc[3], d->qacc[4], d->qacc[5]);
+  }
+  if(d->time>3 && d->time<8){
+    ctr[0] = ctr_init-0.3; ctr[1] = ctr_init-0.3; ctr[2] = ctr_init-0.3; ctr[3] = ctr_init-0.3;
+    actuatorModel(m,d,ctr); 
+   // torqueVector( m, d, torque_vec);
+    calculateTranslation(m,d,acc_vec,ctr); 
+   }
+   if(d->time>8 && d->time<11){
+    ctr[0] = ctr_init-0.1; ctr[1] = ctr_init; ctr[2] = ctr_init-0.1; ctr[3] = ctr_init-0.1;
+    actuatorModel(m,d,ctr); 
+  //  torqueVector( m, d, torque_vec);
+    calculateTranslation(m,d,acc_vec,ctr); 
+    }
+   }
 
   //write data here (dont change/dete this function call; instead write what you need to save in save_data)
   if ( loop_index%data_frequency==0)
     {
-      save_data(m,d);
+      save_data(m,d,acc_vec);
     }
   loop_index = loop_index + 1;
 }

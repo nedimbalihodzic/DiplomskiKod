@@ -22,4 +22,7 @@
 - comment lines related to WINDOWS in makefile, and uncomment LINUX or MAC
 - navigate to quadrotor folder and type run_unix
 
+# XML files for double pendulum and 2D Hopper illustrated in work
+- these XML files can be opened from MuJoCo simulate application, located in bin folder
+
 

@@ -1,0 +1,31 @@
+clear all
+clc
+close all
+filename = 'data.csv';
+
+T = readtable(filename); %check T.Properties
+VariableNames = T.Properties.VariableNames;
+
+Arr = table2array(T);
+[m,n] = size(Arr);
+
+figure 
+plot(Arr(:,1), Arr(:,4));
+xlabel('Vrijeme [s]'); 
+ylabel('a_z (mj\_Data)'); 
+xlim([0 11]);
+title('Vertikalno ubrznje dobijeno iz mj\_Data');
+
+figure
+plot(Arr(:,1), Arr(:,7));
+xlabel('Vrijeme [s]'); 
+ylabel('a_z (formula)');
+xlim([0 11]);
+title('Vertikalno ubrznje dobijeno formulom'); 
+
+figure
+plot(Arr(:,1), Arr(:,4)-Arr(:,7));
+xlabel('Vrijeme [s]'); 
+ylabel('\Delta q');
+xlim([0 11]);
+title('Grafik greške');

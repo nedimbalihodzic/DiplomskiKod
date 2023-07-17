@@ -29,3 +29,6 @@ xlabel('Vrijeme [s]');
 ylabel('\Delta q');
 xlim([0 11]);
 title('Grafik greške');
+
+drag = (Arr(:,4) - Arr(:,7)); 
+x = lsqr( Arr(:,10) , drag );

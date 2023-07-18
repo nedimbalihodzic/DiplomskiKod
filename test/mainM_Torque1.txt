@@ -9,34 +9,29 @@ VariableNames = T.Properties.VariableNames;
 Arr = table2array(T);
 [m,n] = size(Arr);
 
-% for i=2:n
-%     figure(i)
-%   %  yy = i;
-%   %  plot(Arr(:,yy),'r');
-%   %  ylabel(cell2mat(VariableNames(yy)))
-%      yy = i;
-%      plot(Arr(:,1),Arr(:,yy),'r');
-%      ylabel(cell2mat(VariableNames(yy)))
-%      xlabel(cell2mat(VariableNames(1)))
-% end
-
-figure 
-plot(Arr(:,1), Arr(:,2));
+figure
+plot(Arr(:,1), Arr(:,2), 'color', 'k','linewidth',2);
+grid on
 xlabel('Vrijeme [s]'); 
-ylabel('T_x'); 
+ylabel('T_x [Nm]'); 
 xlim([0 3]);
 title('Moment sile oko x ose');
+latex_fig(10, 3, 1.5);
 
 figure 
-plot(Arr(:,1), Arr(:,3));
+plot(Arr(:,1), Arr(:,3), 'color', 'k','linewidth',2);
+grid on
 xlabel('Vrijeme [s]'); 
-ylabel('T_y'); 
+ylabel('T_y [Nm]'); 
 xlim([0 3]);
 title('Moment sile oko y ose');
+latex_fig(10, 3, 1.5);
 
 figure 
-plot(Arr(:,1), Arr(:,4));
+plot(Arr(:,1), Arr(:,4), 'color', 'k','linewidth',2);
+grid on
 xlabel('Vrijeme [s]'); 
-ylabel('T_z'); 
+ylabel('T_z [Nm]'); 
 xlim([0 3]);
 title('Moment sile oko z ose');
+latex_fig(10, 3, 1.5);

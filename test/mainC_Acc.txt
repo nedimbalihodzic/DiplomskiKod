@@ -9,7 +9,7 @@
 #include "string.h"
 
 //simulation end time
-double simend = 11;
+double simend = 8;
 
 #define ndof 6
 #define na 4
@@ -290,7 +290,7 @@ void mycontroller(const mjModel* m, mjData* d)
   mj_energyPos(m,d);
   mj_energyVel(m,d);
   char scenario = 1; 
-  double ctr[na] = {0}; double ctr_init = 0.95;
+  double ctr[na] = {0}; double ctr_init = 0.85;
   double acc_vec[3] = {0};
   double torque_vec[3] = {0};  
   if(scenario == 1)
@@ -303,7 +303,7 @@ void mycontroller(const mjModel* m, mjData* d)
    // printf("%f %f %f \n",d->qacc[3], d->qacc[4], d->qacc[5]);
   }
   if(d->time>3 && d->time<8){
-    ctr[0] = ctr_init-0.3; ctr[1] = ctr_init-0.3; ctr[2] = ctr_init-0.3; ctr[3] = ctr_init-0.3;
+    ctr[0] = ctr_init-0.2; ctr[1] = ctr_init-0.2; ctr[2] = ctr_init-0.2; ctr[3] = ctr_init-0.2;
     actuatorModel(m,d,ctr); 
    // torqueVector( m, d, torque_vec);
     calculateTranslation(m,d,acc_vec,ctr); 
